@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Be My Valentine ❤️</title>
+
+  <!-- Confetti library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <style>
+    /* ---------- THEME COLORS ---------- */
+    :root {
+      --pink1: #ffd6e7;
+      --pink2: #fff0f6;
+      --card: #ffffffdd;
+      --yes: #ff2d6f;
+      --yesHover: #ff004f;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* ---------- PAGE LAYOUT ---------- */
+    body {
+      margin: 0;
+      min-height: 100svh;
+      display: grid;
+      place-items: center;
+      background: radial-gradient(circle at top, var(--pink2), var(--pink1));
+      font-family: system-ui, sans-serif;
+      overflow: hidden;
+      padding: 16px;
+    }
+
+    /* ---------- FLOATING HEARTS ---------- */
+    .heart {
+      position: fixed;
+      bottom: -40px;
+      font-size: 26px;
+      animation: floatUp linear forwards;
+      pointer-events: none;
+      opacity: 0.9;
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(0) scale(1); }
+      to { transform: translateY(-120vh) scale(1.6); opacity: 0; }
+    }
+
+    /* ---------- CONFETTI CANVAS ---------- */
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ---------- CARD ---------- */
+    .card {
+      width: min(720px, 94vw);
+      padding: 30px 22px;
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,.18);
+    }
+
+    h1 {
+      font-size: clamp(26px, 4vw, 44px);
+      margin-bottom: 14px;
+    }
+
+    /* ---------- BUTTON AREA ---------- */
+    .button-zone {
+      position: relative;
+      width: min(520px, 92%);
+      height: 180px;
+      margin: 0 auto;
+    }
+
+    button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 16px 26px;
+      font-size: 18px;
+      font-weight: 800;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 12px 28px rgba(0,0,0,.18);
+      user-select: none;
+      transition: transform .15s ease, background .15s ease;
+    }
+
+    /* YES BUTTON */
+    #yesBtn {
+      left: 15%;
+      background: var(--yes);
+      color: white;
+    }
+
+    #yesBtn:hover {
+      background: var(--yesHover);
+    }
+
+    /* NO BUTTON */
+    #noBtn {
+      left: 60%;
+      background: #e5e7eb;
+      color: #111827;
+    }
+
+    /* ---------- BIG TEASING TEXT ---------- */
+    .hint {
+      margin-top: 14px;
+      font-size: 20px;
+      font-weight: 700;
+      min-height: 30px;
+      color: #d6004d;
+    }
+
+    /* ---------- RESULT ---------- */
+    .result {
+      display: none;
+      animation: pop .45s ease forwards;
+    }
+
+    .result h2 {
+      font-size: clamp(34px, 5vw, 60px);
+      background: linear-gradient(90deg, #ff2d6f, #ff8fb3, #ff2d6f);
+      background-size: 300%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shine 3s infinite;
+    }
+
+    .result p {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    @keyframes shine {
+      from { background-position: 0%; }
+      to { background-position: 300%; }
+    }
+
+    @keyframes pop {
+      from { transform: scale(.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Canvas for confetti -->
+  <canvas id="confettiCanvas"></canvas>
+
+  <main class="card">
+    <h1>Veera Will you be my Valentine? 💖</h1>
+
+    <!-- Button container -->
+    <section class="button-zone" id="zone">
+      <button id="yesBtn">YES ❤️</button>
+      <button id="noBtn">NO 😏</button>
+    </section>
+
+    <!-- Teasing message -->
+    <div class="hint" id="hint">Try pressing “No”… if you can 😈</div>
+
+    <!-- Final screen -->
+    <section class="result" id="result">
+      <h2>BEST. DECISION. EVER. 💘</h2>
+      <p>You just made someone very happy ❤️</p>
+    </section>
+  </main>
+
+  <!-- Romantic music (starts on click only – browser rule) -->
+  <audio id="music" loop preload="auto">
+    <source src="https://cdn.pixabay.com/audio/2022/02/23/audio_8e8c6f0f16.mp3" type="audio/mpeg">
+  </audio>
+
+  <script>
+    /* ---------- ELEMENT REFERENCES ---------- */
+    const zone = document.getElementById("zone");
+    const yesBtn = document.getElementById("yesBtn");
+    const noBtn = document.getElementById("noBtn");
+    const hint = document.getElementById("hint");
+    const result = document.getElementById("result");
+    const music = document.getElementById("music");
+
+    /* ---------- MUSIC (mobile-safe) ---------- */
+    let musicStarted = false;
+
+    function startMusicOnce() {
+      if (!musicStarted) {
+        music.play().catch(() => {});
+        musicStarted = true;
+      }
+    }
+
+    /* Start music on FIRST real user action */
+    document.addEventListener("click", startMusicOnce, { once: true });
+    document.addEventListener("touchstart", startMusicOnce, { once: true });
+
+    /* ---------- FLOATING HEARTS ---------- */
+    setInterval(() => {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.textContent = "❤️";
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.animationDuration = 6 + Math.random() * 4 + "s";
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 10000);
+    }, 700);
+
+    /* ---------- CONFETTI ---------- */
+    const confettiCanvas = document.getElementById("confettiCanvas");
+    const confettiInstance = confetti.create(confettiCanvas, { resize: true });
+
+    /* ---------- YES BUTTON GROW (LIMITED) ---------- */
+    let yesScale = 1;
+
+    function growYes() {
+      if (yesScale < 1.6) {           // HARD LIMIT (important)
+        yesScale += 0.05;             // Slow growth
+        yesBtn.style.transform =
+          `translateY(-50%) scale(${yesScale})`;
+      }
+    }
+
+    /* ---------- NO BUTTON ESCAPE ---------- */
+    function moveNo(x, y) {
+      const zoneRect = zone.getBoundingClientRect();
+      const btnRect = noBtn.getBoundingClientRect();
+
+      // Direction away from finger
+      let dx = (btnRect.left + btnRect.width / 2) - x;
+      let dy = (btnRect.top + btnRect.height / 2) - y;
+      let dist = Math.hypot(dx, dy) || 1;
+      dx /= dist;
+      dy /= dist;
+
+      // New position
+      let left = (btnRect.left - zoneRect.left) + dx * 120;
+      let top  = (btnRect.top - zoneRect.top) + dy * 120;
+
+      // Keep inside container
+      left = Math.max(0, Math.min(zoneRect.width - btnRect.width, left));
+      top  = Math.max(0, Math.min(zoneRect.height - btnRect.height, top));
+
+      noBtn.style.left = left + "px";
+      noBtn.style.top = top + "px";
+      noBtn.style.transform = "translateY(-50%)";
+
+      growYes();
+      hint.textContent = "HAHA 😝 Try harder!";
+    }
+
+    /* Works on desktop + mobile */
+    zone.addEventListener("pointerdown", e => {
+      moveNo(e.clientX, e.clientY);
+    });
+
+    noBtn.addEventListener("click", e => e.preventDefault());
+
+    /* ---------- YES CLICK ---------- */
+    yesBtn.addEventListener("click", () => {
+      zone.style.display = "none";
+      hint.style.display = "none";
+      result.style.display = "block";
+
+      confettiInstance({
+        particleCount: 350,
+        spread: 160,
+        startVelocity: 55,
+        origin: { y: 0.6 }
+      });
+    });
+  </script>
+</body>
+</html>
